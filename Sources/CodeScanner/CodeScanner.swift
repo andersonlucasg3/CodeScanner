@@ -43,6 +43,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         }
 
         func found(code: String) {
+            AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
             parent.completion(.success(code))
         }
 
