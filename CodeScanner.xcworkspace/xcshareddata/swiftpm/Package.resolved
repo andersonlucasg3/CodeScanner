@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "CodeScanner",
+        "repositoryURL": "https://github.com/andersonlucasg3/CodeScanner",
+        "state": {
+          "branch": "master",
+          "revision": "e50362e81d4761a770385a1c7b99bf2e7981acd6",
+          "version": null
+        }
+      }
+    ]
+  },
+  "version": 1
+}

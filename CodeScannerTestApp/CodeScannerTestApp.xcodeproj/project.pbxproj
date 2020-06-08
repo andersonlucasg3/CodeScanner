@@ -14,6 +14,7 @@
 		711CFE9F248E97020081062B /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 711CFE9E248E97020081062B /* Preview Assets.xcassets */; };
 		711CFEA2248E97020081062B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 711CFEA0248E97020081062B /* LaunchScreen.storyboard */; };
 		711CFEAD248E97D00081062B /* CodeScanner in Frameworks */ = {isa = PBXBuildFile; productRef = 711CFEAC248E97D00081062B /* CodeScanner */; };
+		711CFEB0248EAD030081062B /* CodeScanner in Frameworks */ = {isa = PBXBuildFile; productRef = 711CFEAF248EAD030081062B /* CodeScanner */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				711CFEB0248EAD030081062B /* CodeScanner in Frameworks */,
 				711CFEAD248E97D00081062B /* CodeScanner in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -103,6 +105,7 @@
 			name = CodeScannerTestApp;
 			packageProductDependencies = (
 				711CFEAC248E97D00081062B /* CodeScanner */,
+				711CFEAF248EAD030081062B /* CodeScanner */,
 			);
 			productName = CodeScannerTestApp;
 			productReference = 711CFE92248E96FE0081062B /* CodeScannerTestApp.app */;
@@ -132,6 +135,9 @@
 				Base,
 			);
 			mainGroup = 711CFE89248E96FE0081062B;
+			packageReferences = (
+				711CFEAE248EAD030081062B /* XCRemoteSwiftPackageReference "CodeScanner" */,
+			);
 			productRefGroup = 711CFE93248E96FE0081062B /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -356,9 +362,25 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		711CFEAE248EAD030081062B /* XCRemoteSwiftPackageReference "CodeScanner" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/andersonlucasg3/CodeScanner";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		711CFEAC248E97D00081062B /* CodeScanner */ = {
 			isa = XCSwiftPackageProductDependency;
+			productName = CodeScanner;
+		};
+		711CFEAF248EAD030081062B /* CodeScanner */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 711CFEAE248EAD030081062B /* XCRemoteSwiftPackageReference "CodeScanner" */;
 			productName = CodeScanner;
 		};
 /* End XCSwiftPackageProductDependency section */
