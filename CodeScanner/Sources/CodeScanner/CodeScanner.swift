@@ -36,19 +36,19 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         
         func foundCode(code: String) {
             let now = Date()
-            if now.timeIntervalSince(lastTime) >= scanInterval {
-                lastTime = now
+            if now.timeIntervalSince(self.lastTime) >= self.scanInterval {
+                self.lastTime = now
                 self.found(code: code)
             }
         }
 
         func found(code: String) {
             AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
-            parent.completion(.success(code))
+            self.parent.completion(.success(code))
         }
 
         func didFail(reason: ScanError) {
-            parent.completion(.failure(reason))
+            self.parent.completion(.failure(reason))
         }
     }
 
@@ -131,6 +131,10 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         var captureSession: AVCaptureSession!
         var previewLayer: AVCaptureVideoPreviewLayer!
         var delegate: ScannerCoordinator?
+        
+        private var regionOfInterestView: UIView!
+        private var cropRegionView: UIView!
+        private var metadataOutput: AVCaptureMetadataOutput?
 
         override public func viewDidLoad() {
             super.viewDidLoad()
@@ -160,13 +164,13 @@ public struct CodeScannerView: UIViewControllerRepresentable {
                 return
             }
 
-            let metadataOutput = AVCaptureMetadataOutput()
+            self.metadataOutput = AVCaptureMetadataOutput()
 
-            if (captureSession.canAddOutput(metadataOutput)) {
-                captureSession.addOutput(metadataOutput)
+            if (captureSession.canAddOutput(self.metadataOutput!)) {
+                captureSession.addOutput(self.metadataOutput!)
 
-                metadataOutput.setMetadataObjectsDelegate(delegate, queue: DispatchQueue.main)
-                metadataOutput.metadataObjectTypes = delegate?.parent.codeTypes
+                self.metadataOutput?.setMetadataObjectsDelegate(delegate, queue: DispatchQueue.main)
+                self.metadataOutput?.metadataObjectTypes = delegate?.parent.codeTypes
             } else {
                 delegate?.didFail(reason: .badOutput)
                 return
@@ -174,7 +178,20 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         }
 
         override public func viewWillLayoutSubviews() {
-            previewLayer?.frame = view.layer.bounds
+            super.viewWillLayoutSubviews()
+            
+            self.previewLayer?.frame = view.layer.bounds
+        }
+        
+        public override func viewDidLayoutSubviews() {
+            super.viewDidLayoutSubviews()
+            
+            guard let regionOfInterestView = self.regionOfInterestView else { return }
+            regionOfInterestView.frame = self.calculateFrame()
+            regionOfInterestView.center = self.view.center
+            self.metadataOutput?.rectOfInterest = self.previewLayer.metadataOutputRectConverted(fromLayerRect: regionOfInterestView.frame)
+            self.updateOrientation()
+            self.captureSession.commitConfiguration()
         }
 
         @objc func updateOrientation() {
@@ -185,17 +202,33 @@ public struct CodeScannerView: UIViewControllerRepresentable {
 
         override public func viewDidAppear(_ animated: Bool) {
             super.viewDidAppear(animated)
-            previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-            previewLayer.frame = view.layer.bounds
-            previewLayer.videoGravity = .resizeAspectFill
-            view.layer.addSublayer(previewLayer)
-            updateOrientation()
-            captureSession.startRunning()
+            self.previewLayer = AVCaptureVideoPreviewLayer(session: self.captureSession)
+            self.previewLayer.frame = self.view.layer.bounds
+            self.previewLayer.videoGravity = .resizeAspectFill
+            self.view.layer.addSublayer(self.previewLayer)
+            self.updateOrientation()
+            
+            self.regionOfInterestView = UIView.init(frame: self.calculateFrame())
+            self.regionOfInterestView.layer.borderWidth = 4
+            self.regionOfInterestView.layer.borderColor = UIColor.lightGray.cgColor
+            self.regionOfInterestView.center = view.center
+            self.view.addSubview(self.regionOfInterestView)
+            
+            self.cropRegionView = UIView.init(frame: self.view.bounds)
+            self.cropRegionView.center = self.view.center
+            self.cropRegionView.backgroundColor = UIColor.init(white: 0, alpha: 0.5)
+            self.setMask(with: self.regionOfInterestView.frame, in: self.cropRegionView)
+            self.view.addSubview(self.cropRegionView)
+            
+            self.metadataOutput?.rectOfInterest = self.previewLayer.metadataOutputRectConverted(fromLayerRect: self.regionOfInterestView.frame)
+            
+            self.captureSession.commitConfiguration()
+            self.captureSession.startRunning()
         }
 
         override public func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
-
+            
             if (captureSession?.isRunning == false) {
                 captureSession.startRunning()
             }
@@ -207,6 +240,8 @@ public struct CodeScannerView: UIViewControllerRepresentable {
             if (captureSession?.isRunning == true) {
                 captureSession.stopRunning()
             }
+            
+            self.regionOfInterestView?.removeFromSuperview()
 
             NotificationCenter.default.removeObserver(self)
         }
@@ -217,6 +252,34 @@ public struct CodeScannerView: UIViewControllerRepresentable {
 
         override public var supportedInterfaceOrientations: UIInterfaceOrientationMask {
             return .all
+        }
+        
+        private func calculateFrame() -> CGRect {
+            if UIDevice.current.orientation.isLandscape {
+                return CGRect.init(x: 0, y: 0,
+                            width: UIScreen.main.bounds.height * 0.8,
+                            height: UIScreen.main.bounds.height * 0.4)
+            } else {
+                return CGRect.init(x: 0, y: 0,
+                            width: UIScreen.main.bounds.width * 0.8,
+                            height: UIScreen.main.bounds.width * 0.4)
+            }
+        }
+        
+        func setMask(with hole: CGRect, in view: UIView){
+
+            // Create a mutable path and add a rectangle that will be h
+            let mutablePath = CGMutablePath()
+            mutablePath.addRect(view.bounds)
+            mutablePath.addRect(hole)
+
+            // Create a shape layer and cut out the intersection
+            let mask = CAShapeLayer()
+            mask.path = mutablePath
+            mask.fillRule = .evenOdd
+
+            // Add the mask to the view
+            view.layer.mask = mask
         }
     }
     #endif
@@ -243,13 +306,5 @@ public struct CodeScannerView: UIViewControllerRepresentable {
 
     public func updateUIViewController(_ uiViewController: ScannerViewController, context: Context) {
 
-    }
-}
-
-struct CodeScannerView_Previews: PreviewProvider {
-    static var previews: some View {
-        CodeScannerView(codeTypes: [.qr]) { result in
-            // do nothing
-        }
     }
 }
